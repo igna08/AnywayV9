@@ -267,15 +267,22 @@ def send_messenger_message(user_id, text, products):
     requests.post(url, headers=headers, json=data)
 
 @app.route('/chat', methods=['POST'])
-increment_daily_count()
-increment_monthly_count()
 def chatbot():
     data = request.get_json()
-    user_input = data.get('message')
+    user_input = data.get(
+    data = request.get_json()
+    user_input = data.
+'message')
     if user_input:
+        increment_daily_count()  # Incrementar conteo diario
+        increment_monthly_count()  # Incrementar conteo mensual
         response_data = process_user_input(user_input)
-        return jsonify(response_data)
-    return jsonify({'error': 'No message provided'}), 400
+        
+        response_data = process_
+return jsonify(response_data)
+    
+    
+return jsonify({'error': 'No message provided'}), 400
 
 def process_user_input(user_input):
     if 'messages' not in session:
