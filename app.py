@@ -7,7 +7,7 @@ import requests
 from bs4 import BeautifulSoup
 import spacy
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 import psycopg2
 
 
@@ -267,11 +267,17 @@ def chatbot():
     data = request.get_json()
     user_input = data.get('message')
     if user_input:
-        increment_daily_count()
-        increment_monthly_count()
+        current_time = datetime.now()
+        last_message_time = session.get('last_message_time')
+        # Define un umbral de tiempo para considerar una nueva conversación (por ejemplo, 5 minutos)
+        conversation_threshold = timedelta(minutes=5)
+        if not last_message_time or (current_time - last_message_time) > conversation_threshold:
+            increment_daily_count()  # Incrementar el conteo de conversaciones
+        session['last_message_time'] = current_time  # Actualizar el tiempo del último mensaje
         response_data = process_user_input(user_input)
         return jsonify(response_data)
     return jsonify({'error': 'No message provided'}), 400
+
 
 def process_user_input(user_input):
     if 'messages' not in session:
