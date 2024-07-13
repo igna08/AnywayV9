@@ -10,6 +10,7 @@ import sqlite3
 from datetime import datetime
 import psycopg2
 # Configuración inicial
+load_dotenv()
 openai.api_key ='sk-proj-t2n2fig1cNA7sKc7subvT3BlbkFJv4vJNXnubj2fFknPu7lJ'  # Utiliza variable de entorno para la clave API
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -27,14 +28,8 @@ total_conversations = 0
 admin_password = '12345' # Utiliza variable de entorno para la contraseña de admin
 
 
-try:
-    conn = psycopg2.connect("postgresql://anyway_1_0_user:HC54z8E3mOWWi8RYFOUQ6wBHfFLmVI0q@dpg-cq68clss1f4s73du9nk0-a.oregon-postgres.render.com/anyway_1_0")
-    print("Conexión exitosa")
-    conn.close()
-except Exception as e:
-    print(f"Error al conectar: {e}")
 
-DATABASE_URL = os.environ.get( 'postgresql://anyway_1_0_user:HC54z8E3mOWWi8RYFOUQ6wBHfFLmVI0q@dpg-cq68clss1f4s73du9nk0-a.oregon-postgres.render.com/anyway_1_0')
+DATABASE_URL = os.getenv('DATABASE_URL')
 
 def get_db_connection():
     try:
