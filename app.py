@@ -9,6 +9,8 @@ import spacy
 import sqlite3
 from datetime import datetime
 import psycopg2
+from dotenv import load_dotenv
+
 # Configuración inicial
 load_dotenv()
 openai.api_key ='sk-proj-t2n2fig1cNA7sKc7subvT3BlbkFJv4vJNXnubj2fFknPu7lJ'  # Utiliza variable de entorno para la clave API
@@ -264,25 +266,19 @@ def send_messenger_message(user_id, text, products):
 @app.route('/chat', methods=['POST'])
 def chatbot():
     data = request.get_json()
-    user_input = data.get(
-    data = request.get_json()
-    user_input = data.
-'message')
+    user_input = data.get('message')
     if user_input:
-        increment_daily_count()  # Incrementar conteo diario
-        increment_monthly_count()  # Incrementar conteo mensual
+        increment_daily_count()
+        increment_monthly_count()
         response_data = process_user_input(user_input)
-        
-        response_data = process_
-return jsonify(response_data)
-    
-    
-return jsonify({'error': 'No message provided'}), 400
+        return jsonify(response_data)
+    return jsonify({'error': 'No message provided'}), 400
 
 def process_user_input(user_input):
     if 'messages' not in session:
         session['messages'] = []
         session['has_greeted'] = True  # Estado de saludo
+
 
     if not session['has_greeted']:
         session['messages'].append({"role": "system", "content": (
