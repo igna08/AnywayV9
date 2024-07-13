@@ -9,11 +9,11 @@ import spacy
 import sqlite3
 from datetime import datetime
 import psycopg2
-from dotenv import load_dotenv
+
 
 # Configuración inicial
-load_dotenv()
-openai.api_key ='sk-proj-t2n2fig1cNA7sKc7subvT3BlbkFJv4vJNXnubj2fFknPu7lJ'  # Utiliza variable de entorno para la clave API
+
+
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -23,12 +23,11 @@ app.config['DEBUG'] = True
 nlp = spacy.load("es_core_news_md")
 
 # Configuración de tokens de acceso
-access_token = os.getenv('ACCESS_TOKEN')  # Utiliza variable de entorno para el token de acceso
+openai.api_key = os.getenv('OPENAI_API_KEY')  # Asegúrate de configurar tu variable de entorno
+access_token = os.getenv('ACCESS_TOKEN')
 verify_token = os.getenv('VERIFY_TOKEN')
 phone_number_id = os.getenv('PHONE_NUMBER_ID')
-total_conversations = 0
-admin_password = '12345' # Utiliza variable de entorno para la contraseña de admin
-
+WEBHOOK_VERIFY_TOKEN = os.getenv('WEBHOOK_VERIFY_TOKEN')
 
 
 DATABASE_URL = os.getenv('DATABASE_URL')
