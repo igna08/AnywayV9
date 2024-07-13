@@ -17,7 +17,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 app.config['DEBUG'] = True
 
 # Cargar el modelo de lenguaje en español
-nlp = spacy.load('es_core_news_sm')
+nlp = spacy.load("es_core_news_md")
 
 # Configuración de tokens de acceso
 access_token = os.getenv('ACCESS_TOKEN')  # Utiliza variable de entorno para el token de acceso
