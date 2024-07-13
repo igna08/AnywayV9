@@ -267,10 +267,9 @@ def send_messenger_message(user_id, text, products):
     requests.post(url, headers=headers, json=data)
 
 @app.route('/chat', methods=['POST'])
+increment_daily_count()
+increment_monthly_count()
 def chatbot():
-    increment_daily_count()
-    increment_monthly_count()
-
     data = request.get_json()
     user_input = data.get('message')
     if user_input:
