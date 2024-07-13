@@ -11,3 +11,4 @@ psycopg2-binary==2.9.7
 Flask-SQLAlchemy==3.0.4
 Flask-Migrate==4.0.3
 SQLAlchemy==2.0.20
+python-dotenv==0.20.0
