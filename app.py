@@ -1,4 +1,5 @@
 from gc import get_count
+import uuid
 from flask import Flask, request, jsonify, render_template, send_from_directory, session, make_response
 from flask_cors import CORS
 import openai
