@@ -1,5 +1,5 @@
 from gc import get_count
-from flask import Flask, request, jsonify, render_template, send_from_directory, session
+from flask import Flask, request, jsonify, render_template, send_from_directory, session, make_response
 from flask_cors import CORS
 import openai
 import os
@@ -146,7 +146,6 @@ def process_message(user_id, message):
     if conversation:
         conversation_id, start_time = conversation
         
-        # Si la conversación es mayor a 5 minutos, ciérrala y crea una nueva
         if current_time - start_time > timedelta(minutes=5):
             end_conversation(conversation_id)
             conversation_id = create_new_conversation(user_id)
@@ -157,6 +156,21 @@ def process_message(user_id, message):
     
     # Aquí procesarías el mensaje según sea necesario
     return f"Mensaje recibido en la conversación {conversation_id}"
+
+@app.before_request
+def ensure_user_id():
+    user_id = request.cookies.get('user_id')
+    if not user_id:
+        user_id = str(uuid.uuid4())
+        session['user_id'] = user_id
+    else:
+        session['user_id'] = user_id
+
+@app.after_request
+def set_user_id_cookie(response):
+    if 'user_id' in session:
+        response.set_cookie('user_id', session['user_id'])
+    return response
 
 @app.route("/")
 def home():
@@ -321,15 +335,15 @@ def send_messenger_message(user_id, text, products):
 @app.route('/chat', methods=['POST'])
 def chatbot():
     data = request.get_json()
-    user_id = data.get('user_id')
+    user_id = session.get('user_id')
     user_input = data.get('message')
     
-    if user_id and user_input:
-        response_message = process_message(user_id, user_input)
-        response_data = process_user_input(user_input)
-        return jsonify(response_data)
-    return jsonify({'error': 'User ID or message not provided'}), 400
-
+    if not user_input:
+        return jsonify({'error': 'No message provided'}), 400
+    
+    response_message = process_message(user_id, user_input)
+    response_data = process_user_input(user_input)
+    return jsonify(response_data)
 
 def process_user_input(user_input):
     if 'messages' not in session:
