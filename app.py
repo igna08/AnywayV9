@@ -41,16 +41,66 @@ def get_db_connection():
         print(f"Error al conectar a la base de datos: {e}")
         raise
 
+def get_current_conversation(user_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Buscar la última conversación activa para el usuario
+    cur.execute('''
+        SELECT id, timestamp FROM conversations 
+        WHERE user_id = %s AND end_timestamp IS NULL
+        ORDER BY timestamp DESC LIMIT 1
+    ''', (user_id,))
+    
+    conversation = cur.fetchone()
+    
+    cur.close()
+    conn.close()
+    
+    return conversation
+
+def create_new_conversation(user_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Crear una nueva conversación
+    cur.execute('''
+        INSERT INTO conversations (user_id, timestamp)
+        VALUES (%s, %s) RETURNING id
+    ''', (user_id, datetime.utcnow()))
+    
+    conversation_id = cur.fetchone()[0]
+    conn.commit()
+    cur.close()
+    conn.close()
+    
+    return conversation_id
+
+def end_conversation(conversation_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Finalizar la conversación
+    cur.execute('''
+        UPDATE conversations
+        SET end_timestamp = %s
+        WHERE id = %s
+    ''', (datetime.utcnow(), conversation_id))
+    
+    conn.commit()
+    cur.close()
+    conn.close()
+
 def create_tables_if_not_exists():
     conn = get_db_connection()
-    c = conn.cursor()
-    c.execute('''
+    cur = conn.cursor()
+    cur.execute('''
         CREATE TABLE IF NOT EXISTS daily_counts (
             date DATE PRIMARY KEY,
             count INTEGER NOT NULL DEFAULT 0
         )
     ''')
-    c.execute('''
+    cur.execute('''
         CREATE TABLE IF NOT EXISTS monthly_counts (
             year INTEGER NOT NULL,
             month INTEGER NOT NULL,
@@ -59,48 +109,54 @@ def create_tables_if_not_exists():
         )
     ''')
     conn.commit()
+    cur.close()
     conn.close()
 
-def get_counts():
-    create_tables_if_not_exists()
+def update_counts():
     conn = get_db_connection()
-    c = conn.cursor()
-    today = datetime.now()
-    c.execute('SELECT count FROM daily_counts WHERE date = %s', (today.strftime('%Y-%m-%d'),))
-    daily_count_row = c.fetchone()
-    daily_count = daily_count_row[0] if daily_count_row else 0
-    c.execute('SELECT count FROM monthly_counts WHERE year = %s AND month = %s', (today.year, today.month))
-    monthly_count_row = c.fetchone()
-    monthly_count = monthly_count_row[0] if monthly_count_row else 0
-    conn.close()
-    return daily_count, monthly_count
+    cur = conn.cursor()
+    
+    today = datetime.utcnow().date()
+    current_month = today.strftime('%Y-%m')
 
-def reset_monthly_counts():
-    create_tables_if_not_exists()
-    conn = get_db_connection()
-    c = conn.cursor()
-    today = datetime.now()
-    c.execute('DELETE FROM monthly_counts WHERE year = %s AND month = %s', (today.year, today.month))
+    # Actualizar conteo diario
+    cur.execute('''
+        INSERT INTO daily_counts (date, count)
+        VALUES (%s, 1)
+        ON CONFLICT (date) 
+        DO UPDATE SET count = daily_counts.count + 1
+    ''', (today,))
+    
+    # Actualizar conteo mensual
+    cur.execute('''
+        INSERT INTO monthly_counts (year, month, count)
+        VALUES (%s, %s, 1)
+        ON CONFLICT (year, month) 
+        DO UPDATE SET count = monthly_counts.count + 1
+    ''', (today.year, today.month))
+    
     conn.commit()
+    cur.close()
     conn.close()
 
-def increment_daily_count():
-    create_tables_if_not_exists()
-    conn = get_db_connection()
-    c = conn.cursor()
-    today = datetime.now().strftime('%Y-%m-%d')
-    c.execute('INSERT INTO daily_counts (date, count) VALUES (%s, 1) ON CONFLICT (date) DO UPDATE SET count = daily_counts.count + 1', (today,))
-    conn.commit()
-    conn.close()
-
-def increment_monthly_count():
-    create_tables_if_not_exists()
-    conn = get_db_connection()
-    c = conn.cursor()
-    today = datetime.now()
-    c.execute('INSERT INTO monthly_counts (year, month, count) VALUES (%s, %s, 1) ON CONFLICT (year, month) DO UPDATE SET count = monthly_counts.count + 1', (today.year, today.month))
-    conn.commit()
-    conn.close()
+def process_message(user_id, message):
+    conversation = get_current_conversation(user_id)
+    current_time = datetime.utcnow()
+    
+    if conversation:
+        conversation_id, start_time = conversation
+        
+        # Si la conversación es mayor a 5 minutos, ciérrala y crea una nueva
+        if current_time - start_time > timedelta(minutes=5):
+            end_conversation(conversation_id)
+            conversation_id = create_new_conversation(user_id)
+            update_counts()  # Actualiza el conteo al finalizar una conversación
+    else:
+        conversation_id = create_new_conversation(user_id)
+        update_counts()  # Actualiza el conteo al iniciar una nueva conversación
+    
+    # Aquí procesarías el mensaje según sea necesario
+    return f"Mensaje recibido en la conversación {conversation_id}"
 
 @app.route("/")
 def home():
@@ -265,18 +321,14 @@ def send_messenger_message(user_id, text, products):
 @app.route('/chat', methods=['POST'])
 def chatbot():
     data = request.get_json()
+    user_id = data.get('user_id')
     user_input = data.get('message')
-    if user_input:
-        current_time = datetime.now()
-        last_message_time = session.get('last_message_time')
-        # Define un umbral de tiempo para considerar una nueva conversación (por ejemplo, 5 minutos)
-        conversation_threshold = timedelta(minutes=5)
-        if not last_message_time or (current_time - last_message_time) > conversation_threshold:
-            increment_daily_count()  # Incrementar el conteo de conversaciones
-        session['last_message_time'] = current_time  # Actualizar el tiempo del último mensaje
+    
+    if user_id and user_input:
+        response_message = process_message(user_id, user_input)
         response_data = process_user_input(user_input)
         return jsonify(response_data)
-    return jsonify({'error': 'No message provided'}), 400
+    return jsonify({'error': 'User ID or message not provided'}), 400
 
 
 def process_user_input(user_input):
