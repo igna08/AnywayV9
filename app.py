@@ -350,20 +350,28 @@ def send_messenger_message(user_id, text, products):
 
 @app.route('/chat', methods=['POST'])
 def chatbot():
-  data = request.get_json()
-  user_input = data.get('message')
-  if user_input:
+    data = request.get_json()
+    user_input = data.get('message')
+    
+    if user_input:
+        # Obtener el user_id de la sesión
+        if 'user_id' not in session:
+            session['user_id'] = str(uuid.uuid4())
+        user_id = session['user_id']
+        
+        # Procesar el mensaje del usuario
+        response = process_message(user_id, user_input)
+        
+        # Generar la respuesta del chatbot
         response_data = process_user_input(user_input)
-        return jsonify(response_data)
-  
-    # Simular la generación de user_id (puedes ajustar esto según tus necesidades)
-  if 'user_id' not in session:
-        session['user_id'] = str(uuid.uuid4())
-  user_id = session['user_id']
-
-  response = process_message(user_id, user_input)
-  return jsonify({'response': response})
-  return jsonify({'error': 'No message provided'}), 400
+        
+        # Combinar la respuesta con el ID de la conversación
+        return jsonify({
+            'response': response_data['response'],
+            'conversation_id': response
+        })
+    else:
+        return jsonify({'error': 'No message provided'}), 400
 
 def process_user_input(user_input):
     if 'messages' not in session:
@@ -507,6 +515,8 @@ def search_product_on_anyway(product_name):
 productos = search_product_on_anyway('celular')
 for producto in productos:
     print(producto)
+    
+
 
 @app.route('/search_product', methods=['POST'])
 def search_product():
