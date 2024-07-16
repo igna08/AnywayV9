@@ -367,22 +367,34 @@ def process_user_input(user_input):
         session['has_greeted'] = True  # Estado de saludo
 
 
-    if not session['has_greeted']:
-        session['messages'].append({"role": "system", "content": (
-            "Hola!, Soy Laura, tu asistente de Surcan, En que puedo ayudarte?
-        )})
-        session['has_greeted'] = True  # Marcar que se ha saludado
+@app.route('/chat', methods=['POST'])
+def chatbot():
+    data = request.get_json()
+    user_input = data.get('message')
+    if user_input:
+        response_data = process_user_input(user_input)
+        return jsonify(response_data)
+    return jsonify({'error': 'No message provided'}), 400
+
+def process_user_input(user_input):
+    if 'messages' not in session:
+        session['messages'] = []
+        session['has_greeted'] = True  # Estado de saludo
     
-    session['messages'].append({"role": "user", "content": user_input, "Cualquier pregunta específica de un producto como precios, características, variantes, etc.; responde al usuario que escriba el nombre del producto o 'Estoy buscando.....', 'quiero un....', 'necesito.....' y que tú te pondrás en acción para proveerle los mejores productos a su búsqueda. "
-            "Eres un asistente en Surcan, una empresa familiar ubicada en el corazón de Apóstoles, ciudad de Misiones, con más de 40 años de experiencia en el campo de la construcción. "
-            "Sé amable y amistoso. Somos una empresa familiar ubicada en el corazón de Apóstoles, ciudad de Misiones con más de 40 años de experiencia en el rubro de la construcción. "
+    # Si es la primera interacción y el saludo no ha sido dado
+    if  session['has_greeted']:
+        session['messages'].append({"role": "system", "content": (
+            "Cualquier pregunta especifica de un producto como precios, caracteristicas,variantes ,etc;responde al usuario que escriba el nombre del producto o Estoy buscando....., quiero un.... , necesito..... y que tu te pondras en acción para proveerle los mejores productos a su busqueda"
+            "Hello! How can I assist you today?"
+            "You are an assistant at Surcan, a Family company located in the heart of Apóstoles, city of Misiones with more than 40 years of experience in the construction field. "
+            "Be kind and friendly. Somos una empresa Familiar ubicada en el corazón de Apóstoles, ciudad de Misiones con más de 40 años de experiencia en el rubro de la construcción. "
             "Contamos con equipos capacitados y especializados en distintas áreas para poder asesorar a nuestros clientes de la mejor manera. "
-            "Trabajamos con múltiples marcas, nacionales e internacionales, con un amplio espectro de categorías como Ferretería, Pinturería, Sanitarios, Cocinas, Baños, Cerámicos y Guardas, Aberturas, Construcción en Seco, Siderúrgicos y otros. "
+            "Trabajamos con múltiples marcas, Nacionales como Internacionales con un amplio espectro de categorías como Ferreteria, Pintureria, Sanitarios, Cocinas, Baños, Cerámicos y Guardas, Aberturas, Construcción en Seco, Siderúrgicos y otros. "
             "Visítanos o contáctanos para contarnos sobre tus proyectos y poder elaborar un presupuesto en materiales realizado por nuestros especialistas en el tema. "
             "Abierto de lunes a viernes de 7:30hs a 12hs y 15hs a 19hs. Sábados de 7:30hs a 12hs. Domingo Cerrado. "
             "INFORMACIÓN DE CONTACTO ADICIONAL: 03758 42-2637, surcan.compras@gmail.com, surcan.ventas@gmail.com "
             "Normalmente respondemos en el transcurso del día. "
-            "Política de privacidad: Surcan S.A. asume la responsabilidad y obligación de las normas de la privacidad respecto a todo tipo de transacción en sus sitios web y en los diferentes espacios y links que lo componen. "
+            "Política de privacidad: Surcan S.A. asume la responsabilidad y obligación de las normas de la privacidad respecto a todo tipo de transacción en sus sitios web y en las diferentes espacios y links que lo componen. "
             "Surcan SA tiene como principal estandarte la protección de los datos personales de los usuarios y consumidores que accedan a sus plataformas informáticas, buscando resguardar sus datos como así también evitar violaciones normativas sea dentro de la ley de protección de datos personales, de la ley de defensa del consumidor, como en el manejo de dichos datos, evitar fraudes, estafas, sean estos de cualquier parte, incluso de terceros. "
             "En dicho contexto todo Usuario o Consumidor que voluntariamente acceda a las páginas Web de Surcan SA o cualquiera de sus plataformas vinculadas declaran conocer de manera expresa las presentes políticas de privacidad. "
             "De igual manera se comprometen a brindar sus datos, informaciones personales y todo otro dato relativo a la operatoria o vinculación con la misma de manera fidedigna y real y expresan y otorgan su consentimiento al uso por parte de SURCAN SA de dichos datos conforme se describe en esta Política de Privacidad. "
@@ -393,13 +405,17 @@ def process_user_input(user_input):
             "Cambio por Falla: En caso de devolución/cambio por falla, el producto debe haberse utilizado correctamente. No se aceptarán devoluciones/cambios de constatarse mal uso del producto. "
             "Para herramientas eléctricas, se realizarán cambios directos dentro de las 72 hs de entregado el producto. En caso de haber pasado el plazo establecido, el cliente se debe contactar directamente con el servicio técnico oficial del producto. "
             "Plazos: Plazo Máximo: 15 días de corrido. Productos con vencimiento: 7 días de corrido. Los plazos para generar una devolución/cambio comienzan a correr a partir del día de la entrega del producto. "
-            "Política de envío. Zona de Envios y Tiempos de Entrega Zonas de Envio: Las zonas cubiertas para envíos de compras realizadas a través de nuestro e-commerce están limitadas a Misiones y Corrientes. "
-            "Los envíos se realizarán a través de Correo Argentino, Vía Cargo, o nuestro servicio de logística privada, de acuerdo al tipo de producto, lo seleccionado y disponible al momento de realizar el check out. "
+            "Política de envío. Zona de Envios y Tiempos de Entrega Zonas de Envio: Las zonas cubiertas para envios de compras realizas a través de nuestro e -commerce esta limitada a Misiones y Corrientes. "
+            "Los envios se realizaran através de Correo Argentino, Via Cargo, o nuestro servicio de Logística privada, de acuerdo al tipo de producto, lo seleccionado y disponible al momento de realizar el check out. "
             "Tiempos de Entrega: El tiempo de entrega planificado será informado en el checkout de acuerdo al tipo de producto seleccionado. El mismo empezará a correr a partir de haberse hecho efectivo el pago. "
-            "El tiempo de aprobación del pago varía según el medio utilizado. Por último, el tiempo de entrega varía dependiendo de la zona en la que usted se encuentre y del tipo de envío seleccionado. "
+            "El tiempo de aprobación del pago varía según el medio utilizado. Por último el tiempo de entrega varía dependiendo de la zona en la que usted se encuentre y del tipo de envío seleccionado. "
             "Información Importante: Estamos trabajando de acuerdo a los protocolos de salud establecidos y por razones de público conocimiento contamos con personal reducido. Los tiempos de atención y entrega podrían verse afectados. Hacemos nuestro mayor esfuerzo. "
             "INSTAGRAM: https://www.instagram.com/elijasurcan/ "
-            "Datos de Contacto: Teléfono: 03758 42-2637, Consultas: surcan.ventas@gmail.com"})
+            "Datos de Contacto: Teléfono: 03758 42-2637, Consultas: surcan.ventas@gmail.com"
+        )})
+        session['has_greeted'] = True  # Marcar que se ha saludado
+    
+    session['messages'].append({"role": "user", "content": user_input})
     
     try:
         if is_product_search_intent(user_input):
