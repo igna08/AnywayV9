@@ -350,10 +350,12 @@ def send_messenger_message(user_id, text, products):
 
 @app.route('/chat', methods=['POST'])
 def chatbot():
-    data = request.get_json()
+  data = request.get_json()
     user_input = data.get('message')
-    if not user_input:
-        return jsonify({'error': 'No message provided'}), 400
+    if user_input:
+        response_data = process_user_input(user_input)
+        return jsonify(response_data)
+    return jsonify({'error': 'No message provided'}), 400
 
     # Simular la generación de user_id (puedes ajustar esto según tus necesidades)
     if 'user_id' not in session:
