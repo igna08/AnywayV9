@@ -367,20 +367,7 @@ def process_user_input(user_input):
         session['has_greeted'] = True  # Estado de saludo
 
 
-@app.route('/chat', methods=['POST'])
-def chatbot():
-    data = request.get_json()
-    user_input = data.get('message')
-    if user_input:
-        response_data = process_user_input(user_input)
-        return jsonify(response_data)
-    return jsonify({'error': 'No message provided'}), 400
 
-def process_user_input(user_input):
-    if 'messages' not in session:
-        session['messages'] = []
-        session['has_greeted'] = True  # Estado de saludo
-    
     # Si es la primera interacción y el saludo no ha sido dado
     if  session['has_greeted']:
         session['messages'].append({"role": "system", "content": (
