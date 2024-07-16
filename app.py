@@ -42,23 +42,41 @@ def get_db_connection():
         print(f"Error al conectar a la base de datos: {e}")
         raise
 
-def get_current_conversation(user_id):
+def create_tables_if_not_exists():
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # Buscar la última conversación activa para el usuario
+    # Crear tabla de conversaciones
     cur.execute('''
-        SELECT id, timestamp FROM conversations 
-        WHERE user_id = %s AND end_timestamp IS NULL
-        ORDER BY timestamp DESC LIMIT 1
-    ''', (user_id,))
+        CREATE TABLE IF NOT EXISTS conversations (
+            id SERIAL PRIMARY KEY,
+            user_id UUID NOT NULL,
+            timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
+            end_timestamp TIMESTAMP WITH TIME ZONE
+        )
+    ''')
+
+    # Crear tabla de conteo diario
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS daily_counts (
+            date DATE PRIMARY KEY,
+            count INTEGER NOT NULL DEFAULT 0
+        )
+    ''')
+
+    # Crear tabla de conteo mensual
+    cur.execute('''
+        CREATE TABLE IF NOT EXISTS monthly_counts (
+            year INTEGER NOT NULL,
+            month INTEGER NOT NULL,
+            count INTEGER NOT NULL DEFAULT 0,
+            PRIMARY KEY (year, month)
+        )
+    ''')
     
-    conversation = cur.fetchone()
-    
+    conn.commit()
     cur.close()
     conn.close()
-    
-    return conversation
 
 def create_new_conversation(user_id):
     conn = get_db_connection()
@@ -77,6 +95,24 @@ def create_new_conversation(user_id):
     
     return conversation_id
 
+def get_current_conversation(user_id):
+    conn = get_db_connection()
+    cur = conn.cursor()
+    
+    # Buscar la última conversación activa para el usuario
+    cur.execute('''
+        SELECT id, timestamp FROM conversations 
+        WHERE user_id = %s AND end_timestamp IS NULL
+        ORDER BY timestamp DESC LIMIT 1
+    ''', (user_id,))
+    
+    conversation = cur.fetchone()
+    
+    cur.close()
+    conn.close()
+    
+    return conversation
+
 def end_conversation(conversation_id):
     conn = get_db_connection()
     cur = conn.cursor()
@@ -92,33 +128,12 @@ def end_conversation(conversation_id):
     cur.close()
     conn.close()
 
-def create_tables_if_not_exists():
-    conn = get_db_connection()
-    cur = conn.cursor()
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS daily_counts (
-            date DATE PRIMARY KEY,
-            count INTEGER NOT NULL DEFAULT 0
-        )
-    ''')
-    cur.execute('''
-        CREATE TABLE IF NOT EXISTS monthly_counts (
-            year INTEGER NOT NULL,
-            month INTEGER NOT NULL,
-            count INTEGER NOT NULL DEFAULT 0,
-            PRIMARY KEY (year, month)
-        )
-    ''')
-    conn.commit()
-    cur.close()
-    conn.close()
-
 def update_counts():
     conn = get_db_connection()
     cur = conn.cursor()
     
     today = datetime.utcnow().date()
-    current_month = today.strftime('%Y-%m')
+    year, month = today.year, today.month
 
     # Actualizar conteo diario
     cur.execute('''
@@ -134,7 +149,7 @@ def update_counts():
         VALUES (%s, %s, 1)
         ON CONFLICT (year, month) 
         DO UPDATE SET count = monthly_counts.count + 1
-    ''', (today.year, today.month))
+    ''', (year, month))
     
     conn.commit()
     cur.close()
@@ -147,6 +162,7 @@ def process_message(user_id, message):
     if conversation:
         conversation_id, start_time = conversation
         
+        # Si la conversación es mayor a 5 minutos, ciérrala y crea una nueva
         if current_time - start_time > timedelta(minutes=5):
             end_conversation(conversation_id)
             conversation_id = create_new_conversation(user_id)
@@ -157,7 +173,6 @@ def process_message(user_id, message):
     
     # Aquí procesarías el mensaje según sea necesario
     return f"Mensaje recibido en la conversación {conversation_id}"
-
 @app.before_request
 def ensure_user_id():
     user_id = request.cookies.get('user_id')
@@ -354,7 +369,11 @@ def process_user_input(user_input):
 
     if not session['has_greeted']:
         session['messages'].append({"role": "system", "content": (
-            "Cualquier pregunta específica de un producto como precios, características, variantes, etc.; responde al usuario que escriba el nombre del producto o 'Estoy buscando.....', 'quiero un....', 'necesito.....' y que tú te pondrás en acción para proveerle los mejores productos a su búsqueda. "
+            "Hola!, Soy Laura, tu asistente de Surcan, En que puedo ayudarte?
+        )})
+        session['has_greeted'] = True  # Marcar que se ha saludado
+    
+    session['messages'].append({"role": "user", "content": user_input, "Cualquier pregunta específica de un producto como precios, características, variantes, etc.; responde al usuario que escriba el nombre del producto o 'Estoy buscando.....', 'quiero un....', 'necesito.....' y que tú te pondrás en acción para proveerle los mejores productos a su búsqueda. "
             "Eres un asistente en Surcan, una empresa familiar ubicada en el corazón de Apóstoles, ciudad de Misiones, con más de 40 años de experiencia en el campo de la construcción. "
             "Sé amable y amistoso. Somos una empresa familiar ubicada en el corazón de Apóstoles, ciudad de Misiones con más de 40 años de experiencia en el rubro de la construcción. "
             "Contamos con equipos capacitados y especializados en distintas áreas para poder asesorar a nuestros clientes de la mejor manera. "
@@ -380,11 +399,7 @@ def process_user_input(user_input):
             "El tiempo de aprobación del pago varía según el medio utilizado. Por último, el tiempo de entrega varía dependiendo de la zona en la que usted se encuentre y del tipo de envío seleccionado. "
             "Información Importante: Estamos trabajando de acuerdo a los protocolos de salud establecidos y por razones de público conocimiento contamos con personal reducido. Los tiempos de atención y entrega podrían verse afectados. Hacemos nuestro mayor esfuerzo. "
             "INSTAGRAM: https://www.instagram.com/elijasurcan/ "
-            "Datos de Contacto: Teléfono: 03758 42-2637, Consultas: surcan.ventas@gmail.com"
-        )})
-        session['has_greeted'] = True  # Marcar que se ha saludado
-    
-    session['messages'].append({"role": "user", "content": user_input})
+            "Datos de Contacto: Teléfono: 03758 42-2637, Consultas: surcan.ventas@gmail.com"})
     
     try:
         if is_product_search_intent(user_input):
