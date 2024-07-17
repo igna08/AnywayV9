@@ -1,20 +1,16 @@
-from gc import get_count
 import uuid
 from flask import Flask, request, jsonify, render_template, send_from_directory, session, make_response
 from flask_cors import CORS
 import openai
 import os
+import psycopg2
 import requests
 from bs4 import BeautifulSoup
 import spacy
 import sqlite3
 from datetime import datetime, timedelta, timezone
-import psycopg2
-
 
 # Configuración inicial
-
-
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
 CORS(app, resources={r"/*": {"origins": "*"}})
@@ -24,12 +20,16 @@ app.config['DEBUG'] = True
 nlp = spacy.load("es_core_news_md")
 
 # Configuración de tokens de acceso
-openai.api_key = os.getenv('OPENAI_API_KEY')  # Asegúrate de configurar tu variable de entorno
+openai.api_key = ('OPENAI_API_KEY')  # Asegúrate de configurar tu variable de entorno
 access_token = os.getenv('ACCESS_TOKEN')
 verify_token = os.getenv('VERIFY_TOKEN')
 phone_number_id = os.getenv('PHONE_NUMBER_ID')
 WEBHOOK_VERIFY_TOKEN = os.getenv('WEBHOOK_VERIFY_TOKEN')
 
+
+@app.route("/")
+def home():
+    return render_template("index.html")
 
 DATABASE_URL = os.getenv('DATABASE_URL')
 
@@ -49,10 +49,10 @@ def create_tables_if_not_exists():
     # Crear tabla de conversaciones
     cur.execute('''
         CREATE TABLE IF NOT EXISTS conversations (
-            id SERIAL PRIMARY KEY,
-            user_id UUID NOT NULL,
-            timestamp TIMESTAMP WITH TIME ZONE NOT NULL,
-            end_timestamp TIMESTAMP WITH TIME ZONE
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id TEXT NOT NULL,
+            timestamp TIMESTAMP NOT NULL,
+            end_timestamp TIMESTAMP
         )
     ''')
 
@@ -85,10 +85,10 @@ def create_new_conversation(user_id):
     # Crear una nueva conversación
     cur.execute('''
         INSERT INTO conversations (user_id, timestamp)
-        VALUES (%s, %s) RETURNING id
-    ''', (user_id, datetime.utcnow()))
+        VALUES (?, ?) 
+    ''', (user_id, datetime.now(timezone.utc)))
     
-    conversation_id = cur.fetchone()[0]
+    conversation_id = cur.lastrowid
     conn.commit()
     cur.close()
     conn.close()
@@ -102,7 +102,7 @@ def get_current_conversation(user_id):
     # Buscar la última conversación activa para el usuario
     cur.execute('''
         SELECT id, timestamp FROM conversations 
-        WHERE user_id = %s AND end_timestamp IS NULL
+        WHERE user_id = ? AND end_timestamp IS NULL
         ORDER BY timestamp DESC LIMIT 1
     ''', (user_id,))
     
@@ -120,9 +120,9 @@ def end_conversation(conversation_id):
     # Finalizar la conversación
     cur.execute('''
         UPDATE conversations
-        SET end_timestamp = %s
-        WHERE id = %s
-    ''', (datetime.utcnow(), conversation_id))
+        SET end_timestamp = ?
+        WHERE id = ?
+    ''', (datetime.now(timezone.utc), conversation_id))
     
     conn.commit()
     cur.close()
@@ -132,22 +132,25 @@ def update_counts():
     conn = get_db_connection()
     cur = conn.cursor()
     
-    today = datetime.utcnow().date()
-    year, month = today.year, today.month
+    # Obtén la fecha y hora actual en UTC
+    now = datetime.now(timezone.utc)
+    today = now.date()
+    month = today.month
+    year = today.year
 
     # Actualizar conteo diario
     cur.execute('''
         INSERT INTO daily_counts (date, count)
-        VALUES (%s, 1)
-        ON CONFLICT (date) 
+        VALUES (?, 1)
+        ON CONFLICT(date) 
         DO UPDATE SET count = daily_counts.count + 1
     ''', (today,))
     
     # Actualizar conteo mensual
     cur.execute('''
         INSERT INTO monthly_counts (year, month, count)
-        VALUES (%s, %s, 1)
-        ON CONFLICT (year, month) 
+        VALUES (?, ?, 1)
+        ON CONFLICT(year, month) 
         DO UPDATE SET count = monthly_counts.count + 1
     ''', (year, month))
     
@@ -157,13 +160,13 @@ def update_counts():
 
 def process_message(user_id, message):
     conversation = get_current_conversation(user_id)
-    current_time = datetime.utcnow()
+    current_time = datetime.now(timezone.utc)
     
     if conversation:
         conversation_id, start_time = conversation
         
         # Si la conversación es mayor a 5 minutos, ciérrala y crea una nueva
-        if current_time - start_time > timedelta(minutes=5):
+        if current_time - datetime.fromisoformat(start_time) > timedelta(minutes=5):
             end_conversation(conversation_id)
             conversation_id = create_new_conversation(user_id)
             update_counts()  # Actualiza el conteo al finalizar una conversación
@@ -176,14 +179,17 @@ def process_message(user_id, message):
     
     # Aquí procesarías el mensaje según sea necesario
     return f"Mensaje recibido en la conversación {conversation_id}"
+
 @app.before_request
 def ensure_user_id():
     user_id = request.cookies.get('user_id')
     if not user_id:
         user_id = str(uuid.uuid4())
         session['user_id'] = user_id
+        print(f"Nuevo user_id generado: {user_id}")
     else:
         session['user_id'] = user_id
+        print(f"User_id recuperado de la cookie: {user_id}")
 
 @app.after_request
 def set_user_id_cookie(response):
@@ -191,9 +197,7 @@ def set_user_id_cookie(response):
         response.set_cookie('user_id', session['user_id'])
     return response
 
-@app.route("/")
-def home():
-    return render_template("index.html")
+
 
 @app.route('/webhook', methods=['GET', 'POST', 'OPTIONS'])
 def webhook():
@@ -515,8 +519,8 @@ def search_product_on_anyway(product_name):
         return {"response": f"Ocurrió un error inesperado: {str(e)}"}
 
 # Prueba de la función
-productos = search_product_on_anyway('celular')
-for producto in productos:
+#productos = search_product_on_anyway('celular')
+#for producto in productos:
     print(producto)
     
 
