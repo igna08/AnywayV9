@@ -20,7 +20,7 @@ app.config['DEBUG'] = True
 nlp = spacy.load("es_core_news_md")
 
 # Configuración de tokens de acceso
-openai.api_key = ('OPENAI_API_KEY')  # Asegúrate de configurar tu variable de entorno
+openai.api_key = os.getenv('OPENAI_API_KEY')  # Asegúrate de configurar tu variable de entorno
 access_token = os.getenv('ACCESS_TOKEN')
 verify_token = os.getenv('VERIFY_TOKEN')
 phone_number_id = os.getenv('PHONE_NUMBER_ID')
@@ -49,10 +49,10 @@ def create_tables_if_not_exists():
     # Crear tabla de conversaciones
     cur.execute('''
         CREATE TABLE IF NOT EXISTS conversations (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT NOT NULL,
-            timestamp TIMESTAMP NOT NULL,
-            end_timestamp TIMESTAMP
+            id SERIAL PRIMARY KEY,
+            user_id UUID NOT NULL,
+            timestamp TIMESTAMPTZ NOT NULL,
+            end_timestamp TIMESTAMPTZ
         )
     ''')
 
@@ -85,10 +85,10 @@ def create_new_conversation(user_id):
     # Crear una nueva conversación
     cur.execute('''
         INSERT INTO conversations (user_id, timestamp)
-        VALUES (?, ?) 
+        VALUES (%s, %s) RETURNING id
     ''', (user_id, datetime.now(timezone.utc)))
     
-    conversation_id = cur.lastrowid
+    conversation_id = cur.fetchone()[0]
     conn.commit()
     cur.close()
     conn.close()
@@ -102,7 +102,7 @@ def get_current_conversation(user_id):
     # Buscar la última conversación activa para el usuario
     cur.execute('''
         SELECT id, timestamp FROM conversations 
-        WHERE user_id = ? AND end_timestamp IS NULL
+        WHERE user_id = %s AND end_timestamp IS NULL
         ORDER BY timestamp DESC LIMIT 1
     ''', (user_id,))
     
@@ -120,8 +120,8 @@ def end_conversation(conversation_id):
     # Finalizar la conversación
     cur.execute('''
         UPDATE conversations
-        SET end_timestamp = ?
-        WHERE id = ?
+        SET end_timestamp = %s
+        WHERE id = %s
     ''', (datetime.now(timezone.utc), conversation_id))
     
     conn.commit()
@@ -132,7 +132,6 @@ def update_counts():
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # Obtén la fecha y hora actual en UTC
     now = datetime.now(timezone.utc)
     today = now.date()
     month = today.month
@@ -141,16 +140,16 @@ def update_counts():
     # Actualizar conteo diario
     cur.execute('''
         INSERT INTO daily_counts (date, count)
-        VALUES (?, 1)
-        ON CONFLICT(date) 
+        VALUES (%s, 1)
+        ON CONFLICT (date) 
         DO UPDATE SET count = daily_counts.count + 1
     ''', (today,))
     
     # Actualizar conteo mensual
     cur.execute('''
         INSERT INTO monthly_counts (year, month, count)
-        VALUES (?, ?, 1)
-        ON CONFLICT(year, month) 
+        VALUES (%s, %s, 1)
+        ON CONFLICT (year, month) 
         DO UPDATE SET count = monthly_counts.count + 1
     ''', (year, month))
     
@@ -166,7 +165,7 @@ def process_message(user_id, message):
         conversation_id, start_time = conversation
         
         # Si la conversación es mayor a 5 minutos, ciérrala y crea una nueva
-        if current_time - datetime.fromisoformat(start_time) > timedelta(minutes=5):
+        if current_time - start_time > timedelta(minutes=5):
             end_conversation(conversation_id)
             conversation_id = create_new_conversation(user_id)
             update_counts()  # Actualiza el conteo al finalizar una conversación
