@@ -8,7 +8,7 @@ import requests
 from bs4 import BeautifulSoup
 import spacy
 import sqlite3
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import psycopg2
 
 
@@ -132,8 +132,10 @@ def update_counts():
     conn = get_db_connection()
     cur = conn.cursor()
     
-    today = datetime.utcnow().date()
-    month =  today.month
+    # Obtén la fecha y hora actual en UTC
+    now = datetime.now(timezone.utc)
+    today = now.date()
+    month = today.month
 
     # Actualizar conteo diario
     cur.execute('''
@@ -189,6 +191,7 @@ def ensure_user_id():
 def set_user_id_cookie(response):
     if 'user_id' in session:
         response.set_cookie('user_id', session['user_id'])
+    return response
 
 @app.route("/")
 def home():
