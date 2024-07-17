@@ -132,10 +132,8 @@ def update_counts():
     conn = get_db_connection()
     cur = conn.cursor()
     
-    # Obtén la fecha y hora actual en UTC
-    now = datetime.now(timezone.utc)
-    today = now.date()
-    month = today.month
+    today = datetime.utcnow().date()
+    year, month = today.year, today.month
 
     # Actualizar conteo diario
     cur.execute('''
@@ -147,11 +145,11 @@ def update_counts():
     
     # Actualizar conteo mensual
     cur.execute('''
-        INSERT INTO monthly_counts ( month, count)
+        INSERT INTO monthly_counts (year, month, count)
         VALUES (%s, %s, 1)
         ON CONFLICT (year, month) 
         DO UPDATE SET count = monthly_counts.count + 1
-    ''', ( month))
+    ''', (year, month))
     
     conn.commit()
     cur.close()
