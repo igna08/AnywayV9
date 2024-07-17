@@ -133,7 +133,7 @@ def update_counts():
     cur = conn.cursor()
     
     today = datetime.utcnow().date()
-    year, month = today.year, today.month
+     month =  today.month
 
     # Actualizar conteo diario
     cur.execute('''
@@ -145,7 +145,7 @@ def update_counts():
     
     # Actualizar conteo mensual
     cur.execute('''
-        INSERT INTO monthly_counts (year, month, count)
+        INSERT INTO monthly_counts ( month, count)
         VALUES (%s, %s, 1)
         ON CONFLICT (year, month) 
         DO UPDATE SET count = monthly_counts.count + 1
@@ -167,9 +167,12 @@ def process_message(user_id, message):
             end_conversation(conversation_id)
             conversation_id = create_new_conversation(user_id)
             update_counts()  # Actualiza el conteo al finalizar una conversación
+        else:
+            print(f"Continuando la conversación con ID: {conversation_id}")
     else:
         conversation_id = create_new_conversation(user_id)
         update_counts()  # Actualiza el conteo al iniciar una nueva conversación
+        print(f"Iniciando una nueva conversación con ID: {conversation_id}")
     
     # Aquí procesarías el mensaje según sea necesario
     return f"Mensaje recibido en la conversación {conversation_id}"
