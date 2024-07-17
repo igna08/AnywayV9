@@ -133,7 +133,7 @@ def update_counts():
     cur = conn.cursor()
     
     today = datetime.utcnow().date()
-     month =  today.month
+    month =  today.month
 
     # Actualizar conteo diario
     cur.execute('''
@@ -149,7 +149,7 @@ def update_counts():
         VALUES (%s, %s, 1)
         ON CONFLICT (year, month) 
         DO UPDATE SET count = monthly_counts.count + 1
-    ''', (year, month))
+    ''', ( month))
     
     conn.commit()
     cur.close()
@@ -189,7 +189,6 @@ def ensure_user_id():
 def set_user_id_cookie(response):
     if 'user_id' in session:
         response.set_cookie('user_id', session['user_id'])
-    return response
 
 @app.route("/")
 def home():
