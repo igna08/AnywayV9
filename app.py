@@ -452,13 +452,18 @@ def is_product_search_intent(user_input):
 
 
 def extract_product_name(user_input):
-    response = openai.Completion.create(
-        model="gpt-4",
-        prompt=f"Extract the product name from the following sentence: '{user_input}'",
-        max_tokens=50
-    )
-    product_name = response.choices[0].text.strip()
-    return product_name
+    # Analiza el texto del usuario
+    doc = nlp(user_input.lower())
+    product_name = []
+    is_searching = False
+    for token in doc:
+        # Detectar la frase de búsqueda
+        if token.lemma_ in ["buscar", "necesitar", "querer"] and token.pos_ == "VERB":
+            is_searching = True
+        # Extraer sustantivos después del verbo de búsqueda
+        if is_searching and token.pos_ in ["NOUN", "PROPN"]:
+            product_name.append(token.text)
+    product_name_str = " ".join(product_name).strip()
     print(f"Nombre del producto extraído en 'extract_product_name': {product_name_str}")  # Mensaje de depuración
     return product_name_str
 
