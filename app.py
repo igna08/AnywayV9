@@ -451,7 +451,7 @@ def is_product_search_intent(user_input):
     return False
 
 
-def extract_product_name_gpt4(user_input):
+def extract_product_name(user_input):
     response = openai.Completion.create(
         model="gpt-4",
         prompt=f"Extract the product name from the following sentence: '{user_input}'",
