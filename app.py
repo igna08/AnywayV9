@@ -1,5 +1,5 @@
 import uuid
-from flask import Flask, request, jsonify, render_template, send_from_directory, session, make_response
+from flask import Flask, json, request, jsonify, render_template, send_from_directory, session, make_response
 from flask_cors import CORS
 import openai
 import os
@@ -213,7 +213,6 @@ def webhook():
         else:
             return 'Forbidden', 403
 
-
     if request.method == 'POST':
         data = request.get_json()
         print(data)  # Depuración
@@ -231,8 +230,11 @@ def webhook():
                             if isinstance(response, list):
                                 send_whatsapp_carousel(phone_number, response)
                             else:
-                                send_whatsapp_message(phone_number, response['response'])
-
+                                if 'response' in response:
+                                    send_whatsapp_message(phone_number, response['response'])
+                                else:
+                                    print("La clave 'response' no existe en la respuesta:", response)
+                                    send_whatsapp_message(phone_number, "Lo siento, no puedo procesar tu solicitud en este momento.")
         return 'EVENT_RECEIVED', 200
 
 def send_whatsapp_message(to, message):
@@ -369,28 +371,21 @@ def get_initial_context():
     )
 
 def process_user_input(user_input):
-  
-    response = {
-        'respuesta': 'Esta es una respuesta generada'
-    }
-
-
     if 'messages' not in session:
         session['messages'] = []
-        session['has_greeted'] = True  # Estado de saludo
-
+        session['has_greeted'] = False  # Estado de saludo
 
     if not session['has_greeted']:
-        session['messages'].append({"role": "system", "content": "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy? "})
+        session['messages'].append({"role": "system", "content": "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?"})
         session['has_greeted'] = True  # Marcar que se ha saludado
-    
+
     # Agregar contexto a la conversación
     if len(session['messages']) == 1:  # Solo agregar el contexto si es la primera interacción después del saludo
         context = get_initial_context()
         session['messages'].append({"role": "system", "content": context})
 
     session['messages'].append({"role": "user", "content": user_input})
-    
+
     try:
         if is_product_search_intent(user_input):
             product_name = extract_product_name(user_input)
@@ -403,8 +398,7 @@ def process_user_input(user_input):
             )
             bot_message = {"response": response.choices[0].message['content'].strip()}
             session['messages'].append({"role": "assistant", "content": bot_message['response']})
-            return response
-        print(f"Respuesta del chatbot: {response}")
+        print(f"Respuesta del chatbot: {bot_message}")
 
         return bot_message
     except Exception as e:
