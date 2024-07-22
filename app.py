@@ -225,19 +225,17 @@ def webhook():
                     for message in messages:
                         if message.get('type') == 'text':
                             phone_number = message['from']
-                            user_input = message['text']['body']
+                            # Actualiza para manejar 'cuerpo' en lugar de 'body'
+                            user_input = message['text']['cuerpo']
                             response = process_user_input(user_input)
-
-                            # Manejar la respuesta del chatbot
                             if isinstance(response, list):
                                 send_whatsapp_carousel(phone_number, response)
-                            elif 'response' in response:
-                                send_whatsapp_message(phone_number, response['response'])
                             else:
-                                print("La clave 'response' no existe en la respuesta:", response)
-                                send_whatsapp_message(phone_number, 
-                             
-"Lo siento, no puedo procesar tu solicitud en este momento.")
+                                if 'response' in response:
+                                    send_whatsapp_message(phone_number, response['response'])
+                                else:
+                                    print("La clave 'response' no existe en la respuesta:", response)
+                                    send_whatsapp_message(phone_number, "Lo siento, no puedo procesar tu solicitud en este momento.")
         return 'EVENT_RECEIVED', 200
 
 def send_whatsapp_message(to, message):
