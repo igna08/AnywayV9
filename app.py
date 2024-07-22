@@ -21,11 +21,11 @@ nlp = spacy.load("es_core_news_md")
 
 # Configuración de tokens de acceso
 openai.api_key = os.getenv('OPENAI_API_KEY')  # Asegúrate de configurar tu variable de entorno
-access_token = os.getenv('ACCESS_TOKEN')
+ACCESS_TOKEN = os.getenv('ACCESS_TOKEN')
 verify_token = os.getenv('VERIFY_TOKEN')
-phone_number_id = os.getenv('PHONE_NUMBER_ID')
+PHONE_NUMBER_ID = os.getenv('PHONE_NUMBER_ID')
 WEBHOOK_VERIFY_TOKEN = os.getenv('WEBHOOK_VERIFY_TOKEN')
-
+WHATSAPP_API_URL= os.getenv('WHATSAPP_API_URL')
 
 @app.route("/")
 def home():
@@ -198,161 +198,100 @@ def set_user_id_cookie(response):
 
 
 
-@app.route('/webhook', methods=['GET', 'POST', 'OPTIONS'])
+@app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
-    if request.method == 'OPTIONS':
-        return '', 200  # Responder exitosamente a las solicitudes OPTIONS
-    
     if request.method == 'GET':
-        mode = request.args.get("hub.mode")
-        token = request.args.get("hub.verify_token")
-        challenge = request.args.get("hub.challenge")
-        if mode == "subscribe" and token == verify_token:
+        mode = request.args.get('hub.mode')
+        token = request.args.get('hub.verify_token')
+        challenge = request.args.get('hub.challenge')
+
+        if mode == 'subscribe' and token == 'YOUR_VERIFY_TOKEN':
             return challenge, 200
         else:
-            return "Verification token mismatch", 403
+            return 'Forbidden', 403
 
-    elif request.method == 'POST':
+    if request.method == 'POST':
         data = request.get_json()
-        if 'object' in data:
-            if data['object'] == 'whatsapp_business_account':
-                for entry in data['entry']:
-                    for change in entry['changes']:
-                        if 'messages' in change['value']:
-                            for message in change['value']['messages']:
-                                handle_whatsapp_message(message)
-            elif data['object'] == 'instagram':
-                for entry in data['entry']:
-                    for change in entry['changes']:
-                        if 'messaging' in change['value']:
-                            for message in change['value']['messaging']:
-                                handle_instagram_message(message)
-            elif data['object'] == 'page':
-                for entry in data['entry']:
-                    for messaging_event in entry['messaging']:
-                        handle_messenger_message(messaging_event)
-        return "Event received", 200
+        print(data)  # Depuración
 
-def handle_whatsapp_message(message):
-    user_id = message['from']
-    user_text = message['text']['body']
-    response_text, products = process_user_input(user_text)
-    send_whatsapp_message(user_id, response_text, products)
+        if data.get('object') == 'whatsapp_business_account':
+            for entry in data.get('entry', []):
+                for change in entry.get('changes', []):
+                    value = change.get('value', {})
+                    messages = value.get('messages', [])
+                    for message in messages:
+                        if message.get('type') == 'text':
+                            phone_number = message['from']
+                            user_input = message['text']['body']
+                            response = process_user_input(user_input)
+                            if isinstance(response, list):
+                                send_whatsapp_carousel(phone_number, response)
+                            else:
+                                send_whatsapp_message(phone_number, response['response'])
 
-def handle_instagram_message(message):
-    user_id = message['sender']['id']
-    user_text = message['message']['text']
-    response_text, products = process_user_input(user_text)
-    send_instagram_message(user_id, response_text, products)
+        return 'EVENT_RECEIVED', 200
 
-def handle_messenger_message(message):
-    user_id = message['sender']['id']
-    user_text = message['message']['text']
-    response_text, products = process_user_input(user_text)
-    send_messenger_message(user_id, response_text, products)
-
-def send_whatsapp_message(user_id, text, products):
-    url = f"https://graph.facebook.com/v19.0/{phone_number_id}/messages"
+def send_whatsapp_message(to, message):
+    url = f"{WHATSAPP_API_URL}/{PHONE_NUMBER_ID}/messages"
     headers = {
-        "Authorization": f"Bearer {access_token}",
+        "Authorization": f"Bearer {ACCESS_TOKEN}",
         "Content-Type": "application/json"
     }
-    if products:
-        sections = [
+    data = {
+        "messaging_product": "whatsapp",
+        "to": to,
+        "type": "text",
+        "text": {
+            "body": message
+        }
+    }
+    response = requests.post(url, headers=headers, json=data)
+    return response.json()
+
+def send_whatsapp_carousel(to, products):
+    url = f"{WHATSAPP_API_URL}/{PHONE_NUMBER_ID}/messages"
+    headers = {
+        "Authorization": f"Bearer {ACCESS_TOKEN}",
+        "Content-Type": "application/json"
+    }
+    
+    sections = [{
+        "title": "Productos Encontrados",
+        "rows": [
             {
-                "title": "Productos",
-                "rows": [{"id": product['id'], "title": product['title'], "description": product['subtitle']} for product in products]
+                "id": f"product_{i}",
+                "title": product['titulo'],
+                "description": f"{product['precio']} - {product['link']}"
             }
+            for i, product in enumerate(products)
         ]
-        data = {
-            "messaging_product": "whatsapp",
-            "to": user_id,
-            "type": "interactive",
-            "interactive": {
-                "type": "list",
-                "body": {"text": text},
-                "action": {
-                    "button": "Ver productos",
-                    "sections": sections
-                }
-            }
-        }
-    else:
-        data = {
-            "messaging_product": "whatsapp",
-            "to": user_id,
-            "type": "text",
-            "text": {"body": text}
-        }
-    requests.post(url, headers=headers, json=data)
-
-def send_instagram_message(user_id, text, products):
-    url = f"https://graph.facebook.com/v12.0/me/messages"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
-    elements = [
-        {
-            "title": product['title'],
-            "subtitle": product['subtitle'],
-            "image_url": product.get('image_url', 'default-image.jpg'),
-            "buttons": [
-                {
-                    "type": "web_url",
-                    "url": product['url'],
-                    "title": "Ver más"
-                }
-            ]
-        } for product in products
-    ]
+    }]
+    
     data = {
-        "recipient": {"id": user_id},
-        "message": {
-            "attachment": {
-                "type": "template",
-                "payload": {
-                    "template_type": "generic",
-                    "elements": elements
-                }
+        "messaging_product": "whatsapp",
+        "to": to,
+        "type": "interactive",
+        "interactive": {
+            "type": "list",
+            "header": {
+                "type": "text",
+                "text": "Productos Disponibles"
+            },
+            "body": {
+                "text": "Selecciona un producto para obtener más información."
+            },
+            "action": {
+                "button": "Ver Productos",
+                "sections": sections
             }
         }
     }
-    requests.post(url, headers=headers, json=data)
+    
+    response = requests.post(url, headers=headers, json=data)
+    return response.json()
 
-def send_messenger_message(user_id, text, products):
-    url = f"https://graph.facebook.com/v19.0/me/messages"
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
-    elements = [
-        {
-            "title": product['title'],
-            "subtitle": product['subtitle'],
-            "image_url": product.get('image_url', 'default-image.jpg'),
-            "buttons": [
-                {
-                    "type": "web_url",
-                    "url": product['url'],
-                    "title": "Ver más"
-                }
-            ]
-        } for product in products
-    ]
-    data = {
-        "recipient": {"id": user_id},
-        "message": {
-            "attachment": {
-                "type": "template",
-                "payload": {
-                    "template_type": "generic",
-                    "elements": elements
-                }
-            }
-        }
-    }
-    requests.post(url, headers=headers, json=data)
+
+
 
 @app.route('/chat', methods=['POST'])
 def chatbot():
