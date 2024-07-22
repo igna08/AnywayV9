@@ -359,6 +359,10 @@ def process_user_input(user_input):
         session['messages'] = []
         session['has_greeted'] = True  # Estado de saludo
 
+    response = {
+        'respuesta': 'Esta es una respuesta generada'
+    }
+
     if not session['has_greeted']:
         session['messages'].append({"role": "system", "content": "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy? "})
         session['has_greeted'] = True  # Marcar que se ha saludado
@@ -382,7 +386,9 @@ def process_user_input(user_input):
             )
             bot_message = {"response": response.choices[0].message['content'].strip()}
             session['messages'].append({"role": "assistant", "content": bot_message['response']})
-        
+            return response
+        print(f"Respuesta del chatbot: {response}")
+
         return bot_message
     except Exception as e:
         print(f"Error processing input: {str(e)}")
