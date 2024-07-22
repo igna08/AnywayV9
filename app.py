@@ -387,15 +387,17 @@ def process_user_input(user_input):
         context = get_initial_context()
         session['messages'].append({"role": "system", "content": context})
 
+    # Imprimir el mensaje del usuario para depuración
+    print(f"Mensaje del usuario: {user_input}")
+
     session['messages'].append({"role": "user", "content": user_input})
 
     try:
         if is_product_search_intent(user_input):
             product_name = extract_product_name(user_input)
+            print(f"Nombre del producto extraído: {product_name}")  # Verificar nombre del producto
             bot_message = search_product_on_surcansa(product_name)
-            # Asegúrate de que bot_message siempre tenga una clave 'response'
-            if not isinstance(bot_message, dict):
-                bot_message = {"response": "Lo siento, no se encontraron productos."}
+            print(f"Mensaje del bot después de búsqueda: {bot_message}")  # Verificar el mensaje del bot
         else:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
@@ -405,11 +407,16 @@ def process_user_input(user_input):
             bot_message = {"response": response.choices[0].message['content'].strip()}
             session['messages'].append({"role": "assistant", "content": bot_message['response']})
 
-        # Asegúrate de que siempre haya una clave 'response'
+        # Verificar y asegurar la clave 'response' en la respuesta del bot
         if 'response' not in bot_message:
             bot_message['response'] = "Lo siento, no entendí tu solicitud."
 
+        # Agregar la respuesta del bot a la sesión
+        session['messages'].append({"role": "assistant", "content": bot_message['response']})
+
+        # Imprimir la respuesta del chatbot y el estado de la sesión
         print(f"Respuesta del chatbot: {bot_message}")
+        print(f"Estado de la sesión: {session}")
 
         return bot_message
     except Exception as e:
