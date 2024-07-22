@@ -159,10 +159,14 @@ def update_counts():
 
 def process_message(user_id, message):
     conversation = get_current_conversation(user_id)
-    current_time = datetime.now(timezone.utc)
+    current_time = datetime.now(timezone.utc)  # Asegúrate de que sea offset-aware
     
     if conversation:
         conversation_id, start_time = conversation
+        
+        # Asegúrate de que start_time sea offset-aware
+        if start_time.tzinfo is None:
+            start_time = start_time.replace(tzinfo=timezone.utc)
         
         # Si la conversación es mayor a 5 minutos, ciérrala y crea una nueva
         if current_time - start_time > timedelta(minutes=5):
