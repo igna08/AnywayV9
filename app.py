@@ -376,7 +376,7 @@ def get_initial_context():
 def process_user_input(user_input):
     if 'messages' not in session:
         session['messages'] = []
-        session['has_greeted'] = False  # Estado de saludo
+        session['has_greeted'] = True  # Estado de saludo
 
     if not session['has_greeted']:
         session['messages'].append({"role": "system", "content": "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy?"})
