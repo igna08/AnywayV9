@@ -262,39 +262,31 @@ def send_whatsapp_carousel(to, products):
         "Authorization": f"Bearer {ACCESS_TOKEN}",
         "Content-Type": "application/json"
     }
-    
-    sections = [{
-        "title": "Productos Encontrados",
-        "rows": [
-            {
-                "id": f"product_{i}",
-                "title": product['title'],
-                "description": product['subtitle'],
-                "default_action": {
+
+    elements = [
+        {
+            "title": product['title'],
+            "image_url": f"https:{product['image_url']}",  # Asegurarse de que la URL de la imagen sea completa
+            "subtitle": product['subtitle'],
+            "buttons": [
+                {
                     "type": "web_url",
-                    "url": product['default_action']['url']
+                    "url": product['default_action']['url'],
+                    "title": "Ver Producto"
                 }
-            }
-            for i, product in enumerate(products)
-        ]
-    }]
-    
+            ]
+        }
+        for product in products
+    ]
+
     data = {
         "messaging_product": "whatsapp",
         "to": to,
         "type": "interactive",
         "interactive": {
-            "type": "list",
-            "header": {
-                "type": "text",
-                "text": "Productos Disponibles"
-            },
-            "body": {
-                "text": "Selecciona un producto para obtener más información."
-            },
-            "action": {
-                "button": "Ver Productos",
-                "sections": sections
+            "type": "carousel",
+            "carousel": {
+                "items": elements
             }
         }
     }
@@ -302,7 +294,6 @@ def send_whatsapp_carousel(to, products):
     print(f"Datos enviados: {data}")  # Depuración
     print(f"Respuesta de la API: {response.json()}")  # Depuración
     return response.json()
-
 
 
 
