@@ -227,14 +227,10 @@ def webhook():
                             phone_number = message['from']
                             user_input = message['text']['body']
                             response = process_user_input(user_input)
-                            if isinstance(response, list):
-                                send_whatsapp_carousel(phone_number, response)
+                            if 'carousel' in response:
+                                send_whatsapp_carousel(phone_number, response['carousel'])
                             else:
-                                if 'response' in response:
-                                    send_whatsapp_message(phone_number, response['response'])
-                                else:
-                                    print("La clave 'response' no existe en la respuesta:", response)
-                                    send_whatsapp_message(phone_number, "Lo siento, no puedo procesar tu solicitud en este momento.")
+                                send_whatsapp_message(phone_number, response['response'])
         return 'EVENT_RECEIVED', 200
 
 
@@ -272,8 +268,12 @@ def send_whatsapp_carousel(to, products):
         "rows": [
             {
                 "id": f"product_{i}",
-                "title": product['titulo'],
-                "description": f"{product['precio']} - {product['link']}"
+                "title": product['title'],
+                "description": product['subtitle'],
+                "default_action": {
+                    "type": "web_url",
+                    "url": product['default_action']['url']
+                }
             }
             for i, product in enumerate(products)
         ]
@@ -465,34 +465,22 @@ def search_product_on_surcansa(product_name):
     }
     
     try:
-        # Solicitar el contenido de la página
         response = requests.get(search_url, headers=headers)
-        response.raise_for_status()  # Lanza un error en caso de un código de estado HTTP no exitoso
-        
-        # Crear un objeto BeautifulSoup
+        response.raise_for_status()
         soup = BeautifulSoup(response.text, 'html.parser')
-
-        # Encontrar todos los elementos de productos en la página
         product_elements = soup.find_all('li', class_='grid__item')
 
-        # Extraer información de cada producto
         products = []
         base_url = "https://surcansa.com.ar"
         for product in product_elements:
-            # Extraer imagen
             img_tag = product.find('img')
             img_url = img_tag['src'] if img_tag else 'No image'
-            
-            # Extraer nombre y enlace
             link_tag = product.find('a', class_='full-unstyled-link')
             product_name = link_tag.get_text(strip=True) if link_tag else 'No name'
             product_link = f"{base_url}{link_tag['href']}" if link_tag and link_tag['href'].startswith('/') else link_tag['href']
-
-            # Extraer precio
             price_tag = product.find('span', class_='price-item--regular')
             price = price_tag.get_text(strip=True) if price_tag else 'No price'
 
-            # Crear un diccionario para el producto
             product = {
                 'titulo': product_name,
                 'link': product_link,
@@ -500,18 +488,15 @@ def search_product_on_surcansa(product_name):
                 'precio': price
             }
             products.append(product)
-            
-            # Imprimir los detalles del producto en la consola
             print(f"Producto: {product_name}, Precio: {price}, Enlace: {product_link}, Imagen: {img_url}")
         
-        # Limitar a 5 productos
         if products:
             productos = products[:5]
             elements = []
             for producto in productos:
                 elements.append({
                     "title": producto['titulo'],
-                    "image_url": producto['imagen'],
+                    "image_url": f"https:{producto['imagen']}",  # Asegurarse de que la URL de la imagen sea completa
                     "subtitle": producto['precio'],
                     "default_action": {
                         "type": "web_url",
