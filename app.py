@@ -237,6 +237,9 @@ def webhook():
                                     send_whatsapp_message(phone_number, "Lo siento, no puedo procesar tu solicitud en este momento.")
         return 'EVENT_RECEIVED', 200
 
+
+
+
 def send_whatsapp_message(to, message):
     url = f"{WHATSAPP_API_URL}/{PHONE_NUMBER_ID}/messages"
     headers = {
@@ -248,7 +251,7 @@ def send_whatsapp_message(to, message):
         "to": to,
         "type": "text",
         "text": {
-            "body": message
+            "body": str(message)  # Asegurarse de que message sea una cadena
         }
     }
     response = requests.post(url, headers=headers, json=data)
@@ -295,9 +298,11 @@ def send_whatsapp_carousel(to, products):
             }
         }
     }
-    
     response = requests.post(url, headers=headers, json=data)
+    print(f"Datos enviados: {data}")  # Depuración
+    print(f"Respuesta de la API: {response.json()}")  # Depuración
     return response.json()
+
 
 
 
@@ -522,6 +527,7 @@ def search_product_on_surcansa(product_name):
                     ]
                 })
             return {'response': {'carousel': elements}}
+
         else:
             return {"response": f"No encontré productos para '{product_name}'."}
     except Exception as e:
