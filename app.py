@@ -177,9 +177,7 @@ def process_message(user_id, message):
         print(f"Iniciando una nueva conversación con ID: {conversation_id}")
     
     # Aquí procesarías el mensaje según sea necesario
-    return conversation_id
-
-
+    return f"Mensaje recibido en la conversación {conversation_id}"
 
 @app.before_request
 def ensure_user_id():
@@ -197,7 +195,6 @@ def set_user_id_cookie(response):
     if 'user_id' in session:
         response.set_cookie('user_id', session['user_id'])
     return response
-
 
 
 @app.route('/webhook', methods=['GET', 'POST'])
