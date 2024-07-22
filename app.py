@@ -200,13 +200,15 @@ def set_user_id_cookie(response):
 
 @app.route('/webhook', methods=['GET', 'POST'])
 def webhook():
-        if request.method == 'GET':
-        if request.args.get("hub.mode") == "subscribe" and request.args.get("hub.challenge"):
-            if request.args.get("hub.verify_token") == verify_token:
-                return request.args["hub.challenge"], 200
-            return "Verification token mismatch", 403
-        return "Hello world", 200
+    if request.method == 'GET':
+        mode = request.args.get('hub.mode')
+        token = request.args.get('hub.verify_token')
+        challenge = request.args.get('hub.challenge')
 
+        if mode == 'subscribe' and token == os.getenv('VERIFY_TOKEN'):
+            return challenge, 200
+        else:
+            return 'Forbidden', 403
 
 
     if request.method == 'POST':
