@@ -177,7 +177,9 @@ def process_message(user_id, message):
         print(f"Iniciando una nueva conversación con ID: {conversation_id}")
     
     # Aquí procesarías el mensaje según sea necesario
-    return f"Mensaje recibido en la conversación {conversation_id}"
+    return conversation_id
+
+
 
 @app.before_request
 def ensure_user_id():
