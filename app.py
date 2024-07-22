@@ -205,7 +205,7 @@ def webhook():
         token = request.args.get('hub.verify_token')
         challenge = request.args.get('hub.challenge')
 
-        if mode == 'subscribe' and token == 'YOUR_VERIFY_TOKEN':
+        if mode == 'subscribe' and token == 'verify_token':
             return challenge, 200
         else:
             return 'Forbidden', 403
