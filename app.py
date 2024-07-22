@@ -511,7 +511,7 @@ def search_product_on_surcansa(product_name):
                         }
                     ]
                 })
-            return {'response': {'carousel': elements}}
+            return {"carousel": elements}
 
         else:
             return {"response": f"No encontré productos para '{product_name}'."}
