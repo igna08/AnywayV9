@@ -227,14 +227,17 @@ def webhook():
                             phone_number = message['from']
                             user_input = message['text']['body']
                             response = process_user_input(user_input)
+
+                            # Manejar la respuesta del chatbot
                             if isinstance(response, list):
                                 send_whatsapp_carousel(phone_number, response)
+                            elif 'response' in response:
+                                send_whatsapp_message(phone_number, response['response'])
                             else:
-                                if 'response' in response:
-                                    send_whatsapp_message(phone_number, response['response'])
-                                else:
-                                    print("La clave 'response' no existe en la respuesta:", response)
-                                    send_whatsapp_message(phone_number, "Lo siento, no puedo procesar tu solicitud en este momento.")
+                                print("La clave 'response' no existe en la respuesta:", response)
+                                send_whatsapp_message(phone_number, 
+                             
+"Lo siento, no puedo procesar tu solicitud en este momento.")
         return 'EVENT_RECEIVED', 200
 
 def send_whatsapp_message(to, message):
@@ -390,6 +393,9 @@ def process_user_input(user_input):
         if is_product_search_intent(user_input):
             product_name = extract_product_name(user_input)
             bot_message = search_product_on_surcansa(product_name)
+            # Asegúrate de que bot_message siempre tenga una clave 'response'
+            if not isinstance(bot_message, dict):
+                bot_message = {"response": "Lo siento, no se encontraron productos."}
         else:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
@@ -398,13 +404,17 @@ def process_user_input(user_input):
             )
             bot_message = {"response": response.choices[0].message['content'].strip()}
             session['messages'].append({"role": "assistant", "content": bot_message['response']})
+
+        # Asegúrate de que siempre haya una clave 'response'
+        if 'response' not in bot_message:
+            bot_message['response'] = "Lo siento, no entendí tu solicitud."
+
         print(f"Respuesta del chatbot: {bot_message}")
 
         return bot_message
     except Exception as e:
         print(f"Error processing input: {str(e)}")
         return {"response": "Lo siento, hubo un problema al procesar tu solicitud."}
-
 
 def is_product_search_intent(user_input):
     # Analiza el texto del usuario
