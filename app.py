@@ -319,59 +319,64 @@ def chatbot():
     else:
         return jsonify({'error': 'No message provided'}), 400
 
+
+
+
+def get_initial_context():
+    return (
+        "You are an assistant at Surcan, a Family company located in the heart of Apóstoles, city of Misiones with more than 40 years of experience in the construction field. "
+        "Be kind and friendly. Somos una empresa Familiar ubicada en el corazón de Apóstoles, ciudad de Misiones con más de 40 años de experiencia en el rubro de la construcción. "
+        "Contamos con equipos capacitados y especializados en distintas áreas para poder asesorar a nuestros clientes de la mejor manera. "
+        "Trabajamos con múltiples marcas, Nacionales como Internacionales con un amplio espectro de categorías como Ferreteria, Pintureria, Sanitarios, Cocinas, Baños, Cerámicos y Guardas, Aberturas, Construcción en Seco, Siderúrgicos y otros. "
+        "Visítanos o contáctanos para contarnos sobre tus proyectos y poder elaborar un presupuesto en materiales realizado por nuestros especialistas en el tema. "
+        "Abierto de lunes a viernes de 7:30hs a 12hs y 15hs a 19hs. Sábados de 7:30hs a 12hs. Domingo Cerrado. "
+        "INFORMACIÓN DE CONTACTO ADICIONAL: 03758 42-2637, surcan.compras@gmail.com, surcan.ventas@gmail.com "
+        "Normalmente respondemos en el transcurso del día. "
+        "Política de privacidad: Surcan S.A. asume la responsabilidad y obligación de las normas de la privacidad respecto a todo tipo de transacción en sus sitios web y en las diferentes espacios y links que lo componen. "
+        "Surcan SA tiene como principal estandarte la protección de los datos personales de los usuarios y consumidores que accedan a sus plataformas informáticas, buscando resguardar sus datos como así también evitar violaciones normativas sea dentro de la ley de protección de datos personales, de la ley de defensa del consumidor, como en el manejo de dichos datos, evitar fraudes, estafas, sean estos de cualquier parte, incluso de terceros. "
+        "En dicho contexto todo Usuario o Consumidor que voluntariamente acceda a las páginas Web de Surcan SA o cualquiera de sus plataformas vinculadas declaran conocer de manera expresa las presentes políticas de privacidad. "
+        "De igual manera se comprometen a brindar sus datos, informaciones personales y todo otro dato relativo a la operatoria o vinculación con la misma de manera fidedigna y real y expresan y otorgan su consentimiento al uso por parte de SURCAN SA de dichos datos conforme se describe en esta Política de Privacidad. "
+        "No obstante, en caso de tener consultas o inquietudes al respecto, no dude en contactarnos al siguiente correo: surcan610@gmail.com. "
+        "Política de reembolso: Documentación a presentar para realizar el cambio: El cliente deberá presentar la documentación correspondiente de identidad. Sólo se realizarán devoluciones con el mismo método de pago de la compra. "
+        "Estado del Producto: El producto no puede estar probado y/o usado (salvo en caso de cambio por falla). Debe tener su embalaje original (incluyendo interiores), Pueden estar abiertos, pero encontrarse en perfectas condiciones, (salvo aquellos productos que tienen envases sellados como Pinturas). "
+        "El producto debe estar completo, con todos sus accesorios, manuales, certificados de garantía correspondientes y con sus productos bonificados que hayan estado asociados a la compra. No debe estar vencido. "
+        "Cambio por Falla: En caso de devolución/cambio por falla, el producto debe haberse utilizado correctamente. No se aceptarán devoluciones/cambios de constatarse mal uso del producto. "
+        "Para herramientas eléctricas, se realizarán cambios directos dentro de las 72 hs de entregado el producto. En caso de haber pasado el plazo establecido, el cliente se debe contactar directamente con el servicio técnico oficial del producto. "
+        "Plazos: Plazo Máximo: 15 días de corrido. Productos con vencimiento: 7 días de corrido. Los plazos para generar una devolución/cambio comienzan a correr a partir del día de la entrega del producto. "
+        "Política de envío. Zona de Envios y Tiempos de Entrega Zonas de Envio: Las zonas cubiertas para envios de compras realizas a través de nuestro e -commerce esta limitada a Misiones y Corrientes. "
+        "Los envios se realizaran através de Correo Argentino, Via Cargo, o nuestro servicio de Logística privada, de acuerdo al tipo de producto, lo seleccionado y disponible al momento de realizar el check out. "
+        "Tiempos de Entrega: El tiempo de entrega planificado será informado en el checkout de acuerdo al tipo de producto seleccionado. El mismo empezará a correr a partir de haberse hecho efectivo el pago. "
+        "El tiempo de aprobación del pago varía según el medio utilizado. Por último el tiempo de entrega varía dependiendo de la zona en la que usted se encuentre y del tipo de envío seleccionado. "
+        "Información Importante: Estamos trabajando de acuerdo a los protocolos de salud establecidos y por razones de público conocimiento contamos con personal reducido. Los tiempos de atención y entrega podrían verse afectados. Hacemos nuestro mayor esfuerzo. "
+        "INSTAGRAM: https://www.instagram.com/elijasurcan/ "
+        "Datos de Contacto: Teléfono: 03758 42-2637, Consultas: surcan.ventas@gmail.com"
+    )
+
 def process_user_input(user_input):
     if 'messages' not in session:
         session['messages'] = []
         session['has_greeted'] = True  # Estado de saludo
 
-
-
-    # Si es la primera interacción y el saludo no ha sido dado
-    if  session['has_greeted']:
-        session['messages'].append({"role": "system", "content": (
-            "Cualquier pregunta especifica de un producto como precios, caracteristicas,variantes ,etc;responde al usuario que escriba el nombre del producto o Estoy buscando....., quiero un.... , necesito..... y que tu te pondras en acción para proveerle los mejores productos a su busqueda"
-            "Hello! How can I assist you today?"
-            "You are an assistant at Surcan, a Family company located in the heart of Apóstoles, city of Misiones with more than 40 years of experience in the construction field. "
-            "Be kind and friendly. Somos una empresa Familiar ubicada en el corazón de Apóstoles, ciudad de Misiones con más de 40 años de experiencia en el rubro de la construcción. "
-            "Contamos con equipos capacitados y especializados en distintas áreas para poder asesorar a nuestros clientes de la mejor manera. "
-            "Trabajamos con múltiples marcas, Nacionales como Internacionales con un amplio espectro de categorías como Ferreteria, Pintureria, Sanitarios, Cocinas, Baños, Cerámicos y Guardas, Aberturas, Construcción en Seco, Siderúrgicos y otros. "
-            "Visítanos o contáctanos para contarnos sobre tus proyectos y poder elaborar un presupuesto en materiales realizado por nuestros especialistas en el tema. "
-            "Abierto de lunes a viernes de 7:30hs a 12hs y 15hs a 19hs. Sábados de 7:30hs a 12hs. Domingo Cerrado. "
-            "INFORMACIÓN DE CONTACTO ADICIONAL: 03758 42-2637, surcan.compras@gmail.com, surcan.ventas@gmail.com "
-            "Normalmente respondemos en el transcurso del día. "
-            "Política de privacidad: Surcan S.A. asume la responsabilidad y obligación de las normas de la privacidad respecto a todo tipo de transacción en sus sitios web y en las diferentes espacios y links que lo componen. "
-            "Surcan SA tiene como principal estandarte la protección de los datos personales de los usuarios y consumidores que accedan a sus plataformas informáticas, buscando resguardar sus datos como así también evitar violaciones normativas sea dentro de la ley de protección de datos personales, de la ley de defensa del consumidor, como en el manejo de dichos datos, evitar fraudes, estafas, sean estos de cualquier parte, incluso de terceros. "
-            "En dicho contexto todo Usuario o Consumidor que voluntariamente acceda a las páginas Web de Surcan SA o cualquiera de sus plataformas vinculadas declaran conocer de manera expresa las presentes políticas de privacidad. "
-            "De igual manera se comprometen a brindar sus datos, informaciones personales y todo otro dato relativo a la operatoria o vinculación con la misma de manera fidedigna y real y expresan y otorgan su consentimiento al uso por parte de SURCAN SA de dichos datos conforme se describe en esta Política de Privacidad. "
-            "No obstante, en caso de tener consultas o inquietudes al respecto, no dude en contactarnos al siguiente correo: surcan610@gmail.com. "
-            "Política de reembolso: Documentación a presentar para realizar el cambio: El cliente deberá presentar la documentación correspondiente de identidad. Sólo se realizarán devoluciones con el mismo método de pago de la compra. "
-            "Estado del Producto: El producto no puede estar probado y/o usado (salvo en caso de cambio por falla). Debe tener su embalaje original (incluyendo interiores), Pueden estar abiertos, pero encontrarse en perfectas condiciones, (salvo aquellos productos que tienen envases sellados como Pinturas). "
-            "El producto debe estar completo, con todos sus accesorios, manuales, certificados de garantía correspondientes y con sus productos bonificados que hayan estado asociados a la compra. No debe estar vencido. "
-            "Cambio por Falla: En caso de devolución/cambio por falla, el producto debe haberse utilizado correctamente. No se aceptarán devoluciones/cambios de constatarse mal uso del producto. "
-            "Para herramientas eléctricas, se realizarán cambios directos dentro de las 72 hs de entregado el producto. En caso de haber pasado el plazo establecido, el cliente se debe contactar directamente con el servicio técnico oficial del producto. "
-            "Plazos: Plazo Máximo: 15 días de corrido. Productos con vencimiento: 7 días de corrido. Los plazos para generar una devolución/cambio comienzan a correr a partir del día de la entrega del producto. "
-            "Política de envío. Zona de Envios y Tiempos de Entrega Zonas de Envio: Las zonas cubiertas para envios de compras realizas a través de nuestro e -commerce esta limitada a Misiones y Corrientes. "
-            "Los envios se realizaran através de Correo Argentino, Via Cargo, o nuestro servicio de Logística privada, de acuerdo al tipo de producto, lo seleccionado y disponible al momento de realizar el check out. "
-            "Tiempos de Entrega: El tiempo de entrega planificado será informado en el checkout de acuerdo al tipo de producto seleccionado. El mismo empezará a correr a partir de haberse hecho efectivo el pago. "
-            "El tiempo de aprobación del pago varía según el medio utilizado. Por último el tiempo de entrega varía dependiendo de la zona en la que usted se encuentre y del tipo de envío seleccionado. "
-            "Información Importante: Estamos trabajando de acuerdo a los protocolos de salud establecidos y por razones de público conocimiento contamos con personal reducido. Los tiempos de atención y entrega podrían verse afectados. Hacemos nuestro mayor esfuerzo. "
-            "INSTAGRAM: https://www.instagram.com/elijasurcan/ "
-            "Datos de Contacto: Teléfono: 03758 42-2637, Consultas: surcan.ventas@gmail.com"
-        )})
+    if not session['has_greeted']:
+        session['messages'].append({"role": "system", "content": "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy? "})
         session['has_greeted'] = True  # Marcar que se ha saludado
     
+    # Agregar contexto a la conversación
+    if len(session['messages']) == 1:  # Solo agregar el contexto si es la primera interacción después del saludo
+        context = get_initial_context()
+        session['messages'].append({"role": "system", "content": context})
+
     session['messages'].append({"role": "user", "content": user_input})
     
     try:
         if is_product_search_intent(user_input):
             product_name = extract_product_name(user_input)
-            print(f"Nombre del producto extraído: {product_name}")  # Mensaje de depuración
-            bot_message = search_product_on_anyway(product_name)
+            bot_message = search_product_on_surcansa(product_name)
         else:
             response = openai.ChatCompletion.create(
-                model="gpt-3.5-turbo-0125",
+                model="gpt-3.5-turbo",
                 messages=session['messages'],
-                temperature=0.1  # Ajusta la temperatura aquí
+                temperature=0.01  # Ajusta la temperatura aquí
             )
             bot_message = {"response": response.choices[0].message['content'].strip()}
             session['messages'].append({"role": "assistant", "content": bot_message['response']})
@@ -381,6 +386,7 @@ def process_user_input(user_input):
         print(f"Error processing input: {str(e)}")
         return {"response": "Lo siento, hubo un problema al procesar tu solicitud."}
 
+
 def is_product_search_intent(user_input):
     # Analiza el texto del usuario
     doc = nlp(user_input.lower())
@@ -389,7 +395,6 @@ def is_product_search_intent(user_input):
         if token.lemma_ in ["buscar", "necesitar", "querer"] and token.pos_ == "VERB":
             return True
     return False
-
 
 def extract_product_name(user_input):
     # Analiza el texto del usuario
@@ -403,58 +408,79 @@ def extract_product_name(user_input):
         # Extraer sustantivos después del verbo de búsqueda
         if is_searching and token.pos_ in ["NOUN", "PROPN"]:
             product_name.append(token.text)
-    product_name_str = " ".join(product_name).strip()
-    print(f"Nombre del producto extraído en 'extract_product_name': {product_name_str}")  # Mensaje de depuración
-    return product_name_str
+    return " ".join(product_name)
 
-def search_product_on_anyway(product_name):
-    search_url = f'https://tienda.anywayinsumos.com.ar/busqueda?controller=search&order=product.position.desc&s={product_name}'
+def search_product_on_surcansa(product_name):
+    search_url = f'https://surcansa.com.ar/search?q={product_name}'
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
-
+    
     try:
+        # Solicitar el contenido de la página
         response = requests.get(search_url, headers=headers)
-        response.raise_for_status()
-
+        response.raise_for_status()  # Lanza un error en caso de un código de estado HTTP no exitoso
+        
+        # Crear un objeto BeautifulSoup
         soup = BeautifulSoup(response.text, 'html.parser')
-        productos = []
 
-        # Ajuste de selectores basado en el HTML proporcionado
-        product_elements = soup.find_all('article', class_='product-miniature')
+        # Encontrar todos los elementos de productos en la página
+        product_elements = soup.find_all('li', class_='grid__item')
 
+        # Extraer información de cada producto
+        products = []
+        base_url = "https://surcansa.com.ar"
         for product in product_elements:
-            # Extraer título
-            title_elem = product.find('h3', class_='h3 product-title')
-            title = title_elem.get_text(strip=True) if title_elem else 'No Title'
+            # Extraer imagen
+            img_tag = product.find('img')
+            img_url = img_tag['src'] if img_tag else 'No image'
+            
+            # Extraer nombre y enlace
+            link_tag = product.find('a', class_='full-unstyled-link')
+            product_name = link_tag.get_text(strip=True) if link_tag else 'No name'
+            product_link = f"{base_url}{link_tag['href']}" if link_tag and link_tag['href'].startswith('/') else link_tag['href']
 
             # Extraer precio
-            price_elem = product.find('span', class_='product-price')
-            price = price_elem.get_text(strip=True) if price_elem else 'No Price'
+            price_tag = product.find('span', class_='price-item--regular')
+            price = price_tag.get_text(strip=True) if price_tag else 'No price'
 
-            # Extraer imagen
-            img_elem = product.find('img', class_='img-fluid product-thumbnail-first')
-            img_src = img_elem['src'] if img_elem else 'No Image'
-
-            # Extraer link
-            link_elem = product.find('a', class_='thumbnail')
-            link = link_elem['href'] if link_elem else 'No Link'
-
-            productos.append({
-                'titulo': title,
-                'precio': price,
-                'link': link,
-                'imagen': img_src
-            })
+            # Crear un diccionario para el producto
+            product = {
+                'titulo': product_name,
+                'link': product_link,
+                'imagen': img_url,
+                'precio': price
+            }
+            products.append(product)
+            
+            # Imprimir los detalles del producto en la consola
+            print(f"Producto: {product_name}, Precio: {price}, Enlace: {product_link}, Imagen: {img_url}")
         
-        return productos
-    
-    except requests.exceptions.HTTPError as err:
-        return {"error": str(err)}
-    
-    except requests.RequestException as e:
-        return {"response": f"Error al buscar productos: {e}"}
-
+        # Limitar a 5 productos
+        if products:
+            productos = products[:5]
+            elements = []
+            for producto in productos:
+                elements.append({
+                    "title": producto['titulo'],
+                    "image_url": producto['imagen'],
+                    "subtitle": producto['precio'],
+                    "default_action": {
+                        "type": "web_url",
+                        "url": producto['link'],
+                        "webview_height_ratio": "tall",
+                    },
+                    "buttons": [
+                        {
+                            "type": "web_url",
+                            "url": producto['link'],
+                            "title": "Ver Producto"
+                        }
+                    ]
+                })
+            return {"carousel": elements}
+        else:
+            return {"response": f"No encontré productos para '{product_name}'."}
     except Exception as e:
         return {"response": f"Ocurrió un error inesperado: {str(e)}"}
 
@@ -472,7 +498,7 @@ def search_product():
     if not product_name:
         return jsonify({"error": "No se proporcionó el nombre del producto"}), 400
 
-    productos = search_product_on_anyway(product_name)
+    productos = search_product_on_surcansa(product_name)
     return jsonify(productos)
 
 @app.route('/favicon.ico')
