@@ -266,7 +266,7 @@ def send_whatsapp_carousel(to, products):
     elements = [
         {
             "title": product['title'],
-            "image_url": f"https:{product['image_url']}",  # Asegurarse de que la URL de la imagen sea completa
+            "image_url": f"https:{product['image_url']}",  # Asegúrate de que la URL de la imagen sea completa
             "subtitle": product['subtitle'],
             "buttons": [
                 {
@@ -284,17 +284,26 @@ def send_whatsapp_carousel(to, products):
         "to": to,
         "type": "interactive",
         "interactive": {
-            "type": "carousel",
-            "carousel": {
-                "items": elements
+            "type": "button",
+            "body": {
+                "text": "Selecciona un producto para ver más detalles."
+            },
+            "action": {
+                "buttons": [
+                    {
+                        "type": "web_url",
+                        "url": product['default_action']['url'],
+                        "title": "Ver Producto"
+                    }
+                ]
             }
         }
     }
+
     response = requests.post(url, headers=headers, json=data)
     print(f"Datos enviados: {data}")  # Depuración
     print(f"Respuesta de la API: {response.json()}")  # Depuración
     return response.json()
-
 
 
 
