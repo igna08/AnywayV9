@@ -268,6 +268,11 @@ def send_whatsapp_carousel(to, products):
             "title": product['title'],
             "image_url": f"https:{product['image_url']}",  # Asegúrate de que la URL de la imagen sea completa
             "subtitle": product['subtitle'],
+            "default_action": {
+                "type": "web_url",
+                "url": product['default_action']['url'],
+                "webview_height_ratio": "tall",
+            },
             "buttons": [
                 {
                     "type": "web_url",
@@ -284,16 +289,20 @@ def send_whatsapp_carousel(to, products):
         "to": to,
         "type": "interactive",
         "interactive": {
-            "type": "button",
+            "type": "list",
+            "header": {
+                "type": "text",
+                "text": "Productos Disponibles"
+            },
             "body": {
-                "text": "Selecciona un producto para ver más detalles."
+                "text": "Selecciona un producto para obtener más información."
             },
             "action": {
-                "buttons": [
+                "button": "Ver Productos",
+                "sections": [
                     {
-                        "type": "web_url",
-                        "url": product['default_action']['url'],
-                        "title": "Ver Producto"
+                        "title": "Productos",
+                        "rows": elements
                     }
                 ]
             }
