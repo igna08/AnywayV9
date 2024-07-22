@@ -395,9 +395,18 @@ def process_user_input(user_input):
     try:
         if is_product_search_intent(user_input):
             product_name = extract_product_name(user_input)
-            print(f"Nombre del producto extraído: {product_name}")  # Verificar nombre del producto
+            
+            pro
+print(f"Nombre del producto extraído: {product_name}")  # Verificar nombre del producto
             bot_message = search_product_on_surcansa(product_name)
             print(f"Mensaje del bot después de búsqueda: {bot_message}")  # Verificar el mensaje del bot
+
+            # Verificar que el formato de la respuesta sea el esperado
+            if 'carousel' in bot_message:
+                return bot_message
+            else:
+                return {"response": bot_message.get('response', "No se encontraron productos.")}
+
         else:
             response = openai.ChatCompletion.create(
                 model="gpt-3.5-turbo",
