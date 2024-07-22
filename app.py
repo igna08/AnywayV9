@@ -299,28 +299,41 @@ def send_whatsapp_carousel(to, products):
 
 @app.route('/chat', methods=['POST'])
 def chatbot():
-    data = request.get_json()
-    user_input = data.get('message')
-    
-    if user_input:
-        # Obtener el user_id de la sesión
-        if 'user_id' not in session:
-            session['user_id'] = str(uuid.uuid4())
-        user_id = session['user_id']
-        
-        # Procesar el mensaje del usuario
-        response = process_message(user_id, user_input)
-        
-        # Generar la respuesta del chatbot
-        response_data = process_user_input(user_input)
-        
-        # Combinar la respuesta con el ID de la conversación
-        return jsonify({
-            'response': response_data['response'],
-            'conversation_id': response
-        })
-    else:
-        return jsonify({'error': 'No message provided'}), 400
+    try:
+        # Recuperar o crear un user_id
+        user_id = request.cookies.get('user_id')
+        if not user_id:
+            user_id = str(uuid.uuid4())
+            response = make_response()
+            response.set_cookie('user_id', user_id, max_age=60*60*24*365*2)
+        else:
+            response = make_response()
+
+        # Obtener el input del usuario desde el JSON de la solicitud
+        user_input = request.json.get('input')
+
+        # Procesar el input del usuario
+        response_data = process_user_input(user_id, user_input)
+
+        # Verificar si la respuesta contiene la clave 'respuesta'
+        if 'respuesta' not in response_data:
+            return 'Error: la respuesta no contiene la clave esperada.', 500
+
+        # Preparar la respuesta JSON
+        response_json = {
+            'respuesta': response_data['respuesta']
+        }
+
+        # Configurar la respuesta HTTP
+        response.data = json.dumps(response_json)
+        response.content_type = 'application/json'
+        return response
+    except KeyError as e:
+        print(f"KeyError: {e}")
+        return 'Error en la solicitud.', 400
+    except Exception as e:
+        print(f"Error procesando la solicitud: {e}")
+        return 'Error procesando la solicitud.', 500
 
 
 
@@ -356,13 +369,16 @@ def get_initial_context():
     )
 
 def process_user_input(user_input):
+  
+    response = {
+        'respuesta': 'Esta es una respuesta generada'
+    }
+
+
     if 'messages' not in session:
         session['messages'] = []
         session['has_greeted'] = True  # Estado de saludo
 
-    response = {
-        'respuesta': 'Esta es una respuesta generada'
-    }
 
     if not session['has_greeted']:
         session['messages'].append({"role": "system", "content": "¡Hola! Soy tu asistente virtual. ¿En qué puedo ayudarte hoy? "})
