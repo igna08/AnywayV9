@@ -395,9 +395,7 @@ def process_user_input(user_input):
     try:
         if is_product_search_intent(user_input):
             product_name = extract_product_name(user_input)
-            
-            pro
-print(f"Nombre del producto extraído: {product_name}")  # Verificar nombre del producto
+            print(f"Nombre del producto extraído: {product_name}")  # Verificar nombre del producto
             bot_message = search_product_on_surcansa(product_name)
             print(f"Mensaje del bot después de búsqueda: {bot_message}")  # Verificar el mensaje del bot
 
