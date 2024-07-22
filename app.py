@@ -252,6 +252,9 @@ def send_whatsapp_message(to, message):
         }
     }
     response = requests.post(url, headers=headers, json=data)
+    print(f"Enviando mensaje a {to}: {message}")  # Depuración
+    print(f"Datos enviados: {data}")  # Depuración
+    print(f"Respuesta de la API: {response.json()}")  # Depuración
     return response.json()
 
 def send_whatsapp_carousel(to, products):
