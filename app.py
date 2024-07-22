@@ -225,8 +225,7 @@ def webhook():
                     for message in messages:
                         if message.get('type') == 'text':
                             phone_number = message['from']
-                            # Actualiza para manejar 'cuerpo' en lugar de 'body'
-                            user_input = message['text']['cuerpo']
+                            user_input = message['text'].get('cuerpo', 'Mensaje sin cuerpo')
                             response = process_user_input(user_input)
                             if isinstance(response, list):
                                 send_whatsapp_carousel(phone_number, response)
