@@ -267,7 +267,6 @@ def send_whatsapp_carousel(to, products):
         {
             "title": product['title'],
  # Asegúrate de que la URL de la imagen sea completa
-            "subtitle": product['subtitle'],
             "default_action": {
                 "type": "web_url",
                 "url": product['default_action']['url'],
